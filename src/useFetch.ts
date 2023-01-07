@@ -71,7 +71,7 @@ function useFetch<TData = any>(...args: UseFetchArgs): UseFetch<TData> {
       controller.current = new AbortController()
       controller.current.signal.onabort = onAbort
       const theController = controller.current
-
+      
       const { url, options, response } = await doFetchArgs<TData>(
         requestInit,
         method,
@@ -97,7 +97,7 @@ function useFetch<TData = any>(...args: UseFetchArgs): UseFetch<TData> {
         theController.abort()
         if (onTimeout) onTimeout()
       }, timeout)
-
+      console.log('timedout.current', timedout.current);
       let newData
       let newRes
 
@@ -112,6 +112,8 @@ function useFetch<TData = any>(...args: UseFetchArgs): UseFetch<TData> {
         newData = await tryGetData(newRes, defaults.data, responseType)
         res.current.data = onNewData(data.current, newData)
 
+       console.log('interceptors', interceptors);
+        
         res.current = interceptors.response ? await interceptors.response({ response: res.current, request: requestInit }) : res.current
         invariant('data' in res.current, 'You must have `data` field on the Response returned from your `interceptors.response`')
         data.current = res.current.data as TData
@@ -137,6 +139,7 @@ function useFetch<TData = any>(...args: UseFetchArgs): UseFetch<TData> {
 
         if (Array.isArray(data.current) && !!(data.current.length % perPage)) hasMore.current = false
       } catch (err) {
+        console.log('timedout.current', timedout.current);
         if (attempt.current >= retries && timedout.current) error.current = makeError('AbortError', 'Timeout Error')
         const opts = { attempt: attempt.current, error: err }
         const shouldRetry = (
@@ -151,6 +154,7 @@ function useFetch<TData = any>(...args: UseFetchArgs): UseFetch<TData> {
           const theData = await retry(opts, routeOrBody, body)
           return theData
         }
+        console.log('err', err);
         if (err.name !== 'AbortError') {
           error.current = err
         }
